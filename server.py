@@ -7,6 +7,9 @@ clients = []
 while True:
     try:
         message, address = sock_srv.recvfrom(CHUNK*10)
-        sock_srv.sendto(message, address)
+        clients.append(address)
+        for i in clients:
+            if i != address:
+                sock_srv.sendto(message, i)
     except Exception as e:
         print(e)

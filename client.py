@@ -23,9 +23,6 @@ def OGG_2_RAW(ogg_chunk):
     data, samplerate = sf.read(byte_io)
     return (data * 1.0).astype(np.float32)
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.connect(("localhost", 22862))
-
 def recv():
     while True:
         data = sock.recv(CHUNK*10)
@@ -38,5 +35,7 @@ def send():
         data = RAW_2_OGG(data)
         sock.sendall(data)
 
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.connect(("localhost", 59159))
 threading.Thread(target=recv).start()
 threading.Thread(target=send).start()

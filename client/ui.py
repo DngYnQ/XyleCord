@@ -8,21 +8,16 @@ cl = client.tcp('127.0.0.1', 49111)
 def get_items():
     return json.loads(cl.get_channels())
 
-# ────────────────────────────────────────────────
-
 root = tk.Tk()
 root.title("Connect")
 root.geometry("400x280")
 root.configure(bg="#1e1e1e")
 root.resizable(False, False)
 
-# Стили (если используешь ttk где-то ещё)
 style = ttk.Style()
 style.theme_use('clam')
 style.configure("TLabel", background="#1e1e1e", foreground="#e0e0e0", font=("Segoe UI", 11))
 style.configure("TButton", font=("Segoe UI", 11, "bold"))
-
-# ────────────────────────────────────────────────
 
 ttk.Label(root, text="Выбери сервер:").pack(pady=(20, 8))
 
@@ -76,14 +71,12 @@ def connect_or_disconnect():
         # Отключаемся
         print(f"→ Отключаемся от {current_uuid}")
         try:
-            cl.disconnect()            # предполагаем, что такая функция есть
+            cl.disconnect()
         except AttributeError:
             print("  (cl.disconnect() не реализована)")
 
         connected = False
         current_uuid = None
-
-        # Возвращаем кнопку в CONNECT
         btn.config(
             text="CONNECT",
             bg="#2e7d32",
@@ -91,8 +84,6 @@ def connect_or_disconnect():
         )
 
         listbox.config(state="normal")
-
-# ────────────────────────────────────────────────
 
 btn = tk.Button(
     root,

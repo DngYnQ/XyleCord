@@ -20,56 +20,86 @@ p = pyaudio.PyAudio()
 stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE,
                  input=True, output=True, frames_per_buffer=CHUNK)
 
-def udp(host, port):
-    udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udp_sock.connect((host, port))
-    def RAW_2_OGG(raw_chunk):
-        byte_io = io.BytesIO()
-        signal = np.frombuffer(raw_chunk, dtype=np.float32)
-        sf.write(byte_io, signal, RATE, format='OGG')
-        return byte_io.getvalue()
-    def OGG_2_RAW(ogg_chunk):
-        byte_io = io.BytesIO(ogg_chunk)
-        data, samplerate = sf.read(byte_io)
-        return (data * 1.0).astype(np.float32)
+class udp:
+    def __init__(self):
+        self.connected = False
+        self.udp_sock: socket.socket = None
+        self.recv_th = None
+        self.send_th = None
+        self.check_th = None
+        self.muted = False
 
-    def recv():
-        global recv_all
-        while True:
-            try:
-                data = udp_sock.recv(CHUNK * 10)
-                recv_all+=CHUNK*10
-                stream.write(OGG_2_RAW(data), CHUNK)
-            except:return 0
-    def send():
-        global send_all
-        while True:
-            try:
-                data = stream.read(CHUNK, exception_on_overflow=False)
-                data = RAW_2_OGG(data)
-                udp_sock.sendall(data)
-                send_all+=len(data)
-            except:return 0
+    def connect(self, host, port):
+        self.connected = True
+        print(host, port)
+        self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.udp_sock.connect((host, port))
 
-    def check():
-        b = 0
-        while True:
-            if b % 1000000 == 0:
-                print(f'packs udp: {send_all} | {recv_all}')
-            b+=1
-            if not recv_th.is_alive() or not send_th.is_alive():
-                print("udp  : voice   : not work  - died")
-                return 0
+        def RAW_2_OGG(raw_chunk):
+            byte_io = io.BytesIO()
+            signal = np.frombuffer(raw_chunk, dtype=np.float32)
+            sf.write(byte_io, signal, RATE, format='OGG')
+            return byte_io.getvalue()
 
-    recv_th = threading.Thread(target=recv)
-    recv_th.start()
-    send_th=threading.Thread(target=send)
-    send_th.start()
-    check_th = threading.Thread(target=check)
-    check_th.start()
+        def OGG_2_RAW(ogg_chunk):
+            byte_io = io.BytesIO(ogg_chunk)
+            data, samplerate = sf.read(byte_io)
+            return (data * 1.0).astype(np.float32)
+
+        def recv():
+            global recv_all
+            while True:
+                if not self.connected:
+                    return
+                try:
+                    data = self.udp_sock.recv(CHUNK * 10)
+                    recv_all += CHUNK * 10
+                    stream.write(OGG_2_RAW(data), CHUNK)
+                except:
+                    return 0
+
+        def send():
+            global send_all
+            while True:
+                if not self.connected:
+                    return
+
+                if not self.muted:
+                    pass
+                try:
+
+                    data = stream.read(CHUNK, exception_on_overflow=False)
+                    data = RAW_2_OGG(data)
+                    self.udp_sock.sendall(data)
+                    send_all += len(data)
+                except:
+                    return 0
+
+        def check():
+            b = 0
+            while True:
+                if not self.connected:
+                    return
+                if b % 1000000 == 0:
+                    print(f'packs udp: {send_all} | {recv_all} {self.connected}')
+                b += 1
+                if not self.recv_th.is_alive() or not self.send_th.is_alive():
+                    print("udp  : voice   : not work  - died")
+                    return 0
+
+        self.recv_th = threading.Thread(target=recv)
+        self.recv_th.start()
+        self.send_th = threading.Thread(target=send)
+        self.send_th.start()
+        self.check_th = threading.Thread(target=check)
+        self.check_th.start()
+
+    def disconnect(self):
+        if self.connected:
+            self.connected = False
+            self.udp_sock.close()
 
 class tcp:
-
     def __init__(self,host, port):
         self.host = host
         self.port = port

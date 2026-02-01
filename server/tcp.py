@@ -33,7 +33,7 @@ def run():
                     if data['action'] == 'get_channels':
                         sock.send(json.dumps(channels).encode())
                     if data['action'] == 'connect_to':
-                        sock.send(json.dumps({"data": "OK!"}).encode())
+                        sock.send(json.dumps({"data": "OK!", "host": {"ip": "127.0.0.1", "port": 49111}}).encode())
                     if data['action'] == 'disconnect':
                         sock.send(json.dumps({"data": "OK!"}).encode())
 

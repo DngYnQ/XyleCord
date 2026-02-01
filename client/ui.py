@@ -4,6 +4,7 @@ from tkinter import ttk
 
 import client
 cl = client.tcp('127.0.0.1', 49111)
+cl_upd = client.udp()
 
 def get_items():
     return json.loads(cl.get_channels())
@@ -56,7 +57,9 @@ def connect_or_disconnect():
         uuid = server['uuid']
 
         print(f"→ Подключаемся к {server['name']} ({uuid})")
-        cl.connect(uuid)
+        d = json.loads(cl.connect(uuid))
+        cl_upd.connect(d['host']['ip'], int(d['host']['port']))
+        print(d)
 
         connected = True
         current_uuid = uuid
@@ -68,13 +71,9 @@ def connect_or_disconnect():
         listbox.config(state="disabled")
 
     else:
-        # Отключаемся
         print(f"→ Отключаемся от {current_uuid}")
-        try:
-            cl.disconnect()
-        except AttributeError:
-            print("  (cl.disconnect() не реализована)")
-
+        cl.disconnect()
+        cl_upd.disconnect()
         connected = False
         current_uuid = None
         btn.config(
